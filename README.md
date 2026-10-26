@@ -2,6 +2,12 @@
 
 A real-time monitoring dashboard for immersion cooling systems, built with React, TypeScript, and Apache ECharts. An Express API reads telemetry from InfluxDB and streams live updates over WebSockets.
 
+## Preview
+
+![Immersion Cooling Dashboard showing coolant and water gauges, historical charts, and unit status](assets/dashboard-preview.png)
+
+*Screenshot uses synthetic readings and a fictional tank identifier. No company data is shown.*
+
 ## Features
 
 - Coolant and water temperature and flow gauges.
@@ -11,18 +17,6 @@ A real-time monitoring dashboard for immersion cooling systems, built with React
 - Automatic discovery of tanks and their available metrics.
 - Redis caching and shared backend polling across connected browsers.
 - Responsive dark interface and Docker Compose deployment.
-
-## Architecture
-
-```text
-InfluxDB 2.x --> Express API <--> Redis
-                    |
-              REST + WebSocket
-                    |
-           React + Apache ECharts
-```
-
-REST seeds historical charts. The backend polls current readings approximately every two seconds and broadcasts updates. Live chart updates use ECharts directly to avoid a React render for each tick. Traefik routes HTTPS requests to the API and nginx frontend.
 
 ## Stack
 
@@ -85,19 +79,6 @@ docker compose up -d --build
 ```
 
 Open `https://localhost`; a self-signed certificate requires a browser trust exception. Configure trusted certificates and authentication before exposing a deployment publicly. The application does not provide user authentication.
-
-## API
-
-| Endpoint | Purpose |
-| --- | --- |
-| `GET /api/health` | Process health |
-| `GET /api/tanks` | Discovered tanks and metric capabilities |
-| `GET /api/snapshot?serial=...` | Latest readings |
-| `GET /api/history?metrics=coolantInput,coolantOutput&range=1d&serial=...` | Historical series |
-| `GET /api/status?range=1d&serial=...` | Status timelines |
-| `WS /ws` | Live telemetry updates |
-
-Serial values must match discovered tanks. Supported ranges and intervals are defined in `backend/src/ranges.ts` and `frontend/src/config/ranges.ts`.
 
 ## Project structure
 
