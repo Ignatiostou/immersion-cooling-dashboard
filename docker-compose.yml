@@ -1,0 +1,57 @@
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks:
+      - dashboard-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      PORT: 4000
+      INFLUX_URL: ${INFLUX_URL:-http://influxdb:8086}
+      INFLUX_ORG: ${INFLUX_ORG}
+      INFLUX_BUCKET: ${INFLUX_BUCKET}
+      INFLUX_TOKEN: ${INFLUX_TOKEN}
+      REDIS_URL: redis://redis:6379
+      # Optional tuning knobs; the defaults apply when they are absent from .env.
+      STALE_AFTER_MS: ${STALE_AFTER_MS:-60000}
+      INFLUX_MAX_CONCURRENCY: ${INFLUX_MAX_CONCURRENCY:-6}
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - dashboard-net
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    networks:
+      - dashboard-net
+
+  traefik:
+    image: traefik:v3.1
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "127.0.0.1:9000:9000"
+    volumes:
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/dynamic:/etc/traefik/dynamic:ro
+      - ./traefik/certs:/etc/traefik/certs:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - dashboard-net
+
+networks:
+  dashboard-net:
+    driver: bridge

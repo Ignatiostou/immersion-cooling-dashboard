@@ -1,0 +1,33 @@
+http:
+  routers:
+    api:
+      rule: "PathPrefix(`/api`)"
+      entryPoints: [websecure]
+      service: backend
+      priority: 100
+      tls: {}
+
+    websocket:
+      rule: "Path(`/ws`)"
+      entryPoints: [websecure]
+      service: backend
+      priority: 100
+      tls: {}
+
+    frontend:
+      rule: "PathPrefix(`/`)"
+      entryPoints: [websecure]
+      service: nginx-static
+      priority: 1
+      tls: {}
+
+  services:
+    backend:
+      loadBalancer:
+        servers:
+          - url: "http://backend:4000"
+
+    nginx-static:
+      loadBalancer:
+        servers:
+          - url: "http://frontend:80"
